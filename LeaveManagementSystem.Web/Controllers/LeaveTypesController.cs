@@ -16,6 +16,7 @@ namespace LeaveManagementSystem.Web.Controllers
         private readonly ApplicationDbContext _context;
 
         private readonly IMapper _mapper;
+        private const string NameExistsValidationMessage = "This leave type already exists in the database";
 
         public LeaveTypesController(ApplicationDbContext context, IMapper mapper)
         {
@@ -71,10 +72,10 @@ namespace LeaveManagementSystem.Web.Controllers
         public async Task<IActionResult> Create(LeaveTypeCreateVM leaveTypeCreate)
         {
             // Adding custom validation and model state error
-            //if (leaveTypeCreate.Name.Contains("vacation"))
-            //{
-            //    ModelState.AddModelError(nameof(leaveTypeCreate.Name), "Name should not contain vacation");
-            //}
+            if (await CheckIfLeaveTypeNameExists(leaveTypeCreate.Name))
+            {
+                ModelState.AddModelError(nameof(leaveTypeCreate.Name), NameExistsValidationMessage);
+            }
 
             if (ModelState.IsValid)
             {
@@ -115,6 +116,12 @@ namespace LeaveManagementSystem.Web.Controllers
             if (id != leaveTypeEdit.Id)
             {
                 return NotFound();
+            }
+
+            // Adding custom validation and model state error
+            if (await CheckIfLeaveTypeNameExistsForEdit(leaveTypeEdit))
+            {
+                ModelState.AddModelError(nameof(leaveTypeEdit.Name), NameExistsValidationMessage);
             }
 
             if (ModelState.IsValid)
@@ -178,6 +185,19 @@ namespace LeaveManagementSystem.Web.Controllers
         private bool LeaveTypeExists(int id)
         {
             return _context.LeaveTypes.Any(e => e.Id == id);
+        }
+
+        private async Task<bool> CheckIfLeaveTypeNameExists(string name)
+        {
+            var lowerCaseName = name.ToLower();
+            return await _context.LeaveTypes.AnyAsync(q => q.Name.ToLower().Equals(lowerCaseName));
+        }
+
+        private async Task<bool> CheckIfLeaveTypeNameExistsForEdit(LeaveTypeEditVM leaveTypeEdit)
+        {
+            var lowerCaseName = leaveTypeEdit.Name.ToLower();
+            return await _context.LeaveTypes.AnyAsync(q => q.Name.ToLower().Equals(lowerCaseName)
+            && q.Id != leaveTypeEdit.Id);
         }
     }
 }
