@@ -5,15 +5,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace LeaveManagementSystem.Web.Services;
 
-public class LeaveTypesService(ApplicationDbContext context, IMapper mapper) : ILeaveTypesService
+public class LeaveTypesService(ApplicationDbContext _context, IMapper _mapper) : ILeaveTypesService
 {
-    private readonly ApplicationDbContext _context;
-    private readonly IMapper _mapper;
-
     public async Task<List<LeaveTypeReadOnlyVM>> GetAllAsync()
     {
         // var data = SELECT * FROM LeaveTypes
-        // await _context.LeaveTypes.ToListAsync()
         var data = await _context.LeaveTypes.ToListAsync();
         // convert the datamodel to viewmodel - Use AutoMapper
         var viewData = _mapper.Map<List<LeaveTypeReadOnlyVM>>(data);
@@ -22,7 +18,7 @@ public class LeaveTypesService(ApplicationDbContext context, IMapper mapper) : I
 
     public async Task<T?> Get<T>(int id) where T : class
     {
-        var data = _context.LeaveTypes.FirstOrDefaultAsync(x => x.Id == id);
+        var data = await _context.LeaveTypes.FirstOrDefaultAsync(x => x.Id == id);
         if (data == null)
         {
             return null;
@@ -57,18 +53,18 @@ public class LeaveTypesService(ApplicationDbContext context, IMapper mapper) : I
         await _context.SaveChangesAsync();
     }
 
-    private bool LeaveTypeExists(int id)
+    public bool LeaveTypeExists(int id)
     {
         return _context.LeaveTypes.Any(e => e.Id == id);
     }
 
-    private async Task<bool> CheckIfLeaveTypeNameExists(string name)
+    public async Task<bool> CheckIfLeaveTypeNameExists(string name)
     {
         var lowerCaseName = name.ToLower();
         return await _context.LeaveTypes.AnyAsync(q => q.Name.ToLower().Equals(lowerCaseName));
     }
 
-    private async Task<bool> CheckIfLeaveTypeNameExistsForEdit(LeaveTypeEditVM leaveTypeEdit)
+    public async Task<bool> CheckIfLeaveTypeNameExistsForEdit(LeaveTypeEditVM leaveTypeEdit)
     {
         var lowerCaseName = leaveTypeEdit.Name.ToLower();
         return await _context.LeaveTypes.AnyAsync(q => q.Name.ToLower().Equals(lowerCaseName)
